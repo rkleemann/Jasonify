@@ -152,13 +152,11 @@ sub set {
 
 =over
 
-=cut
-
-=item I<name> => B<''>
-
 =item I<list_sep> => B<', '>
 
 =item I<beautify> => B<undef>
+
+=back
 
 =cut
 
@@ -171,9 +169,15 @@ __PACKAGE__->set(
     beautify => undef,
 );
 
+=option Undefify options
+
+=over
+
 =item I<null> => B<'null'>
 
 How C<undef> is encoded.
+
+=back
 
 =cut
 
@@ -182,11 +186,17 @@ __PACKAGE__->set(
     null  => 'null',
 );
 
+=option Booleanify options
+
+=over
+
 =item I<false> => B<'false'>
 
 =item I<true>  => B<'true'>
 
 How the boolean values are encoded.
+
+=back
 
 =cut
 
@@ -195,6 +205,10 @@ __PACKAGE__->set(
     false => 'false',
     true  => 'true',
 );
+
+=option Stringify options
+
+=over
 
 =item I<quote> => B<'"'>
 
@@ -234,6 +248,8 @@ All strings are to be considered long, and encoded accordingly.
 
 Special characters, and how they are encoded.
 
+=back
+
 =cut
 
 __PACKAGE__->set(
@@ -262,6 +278,10 @@ __PACKAGE__->set(
     #qquotes => undef,
 );
 
+=option Numify options
+
+=over
+
 =item I<infinite>  => B<"Infinifty">,
 
 =item I<-infinite> => B<"-Infinifty">,
@@ -269,6 +289,8 @@ __PACKAGE__->set(
 =item I<nonnumber> => B<"NaN">,
 
 How to encode the values for infinity, negative infinity, and not-a-number.
+
+=back
 
 =cut
 
@@ -280,9 +302,15 @@ __PACKAGE__->set(
     #num_sep  => undef,
 );
 
+=option Lvalueify options
+
+=over
+
 =item I<lvalue> => B<'$lvalue'>
 
 Encode C<lvalue>s as simple strings.
+
+=back
 
 =cut
 
@@ -291,11 +319,17 @@ __PACKAGE__->set(
     lvalue    => '$lvalue',
 );
 
+=option Vstringify options
+
+=over
+
 =item I<vformat> => B<'\\u%0*v4x'>
 
 =item I<vsep>    => B<'\\u'>
 
 Encode vstrings as a series of 4-character hex digits separated by C<'\u'>.
+
+=back
 
 =cut
 
@@ -305,6 +339,16 @@ __PACKAGE__->set(
     vsep    => '\\u',
 );
 
+#=option Regexpify options
+#
+#=over
+#
+#=item ...
+#
+#=back
+#
+#=cut
+#
 #__PACKAGE__->set(
 #    # Regexpify options
 #    #quote3  => undef,
@@ -312,10 +356,26 @@ __PACKAGE__->set(
 #    #encode3 => undef,
 #);
 
+=option Arraryify options
+
+=over
+
+=item I<array_ref> => B<'[$_]'>
+
+A reference to an C<ARRAY> is encoded in this manner.
+
+=back
+
+=cut
+
 __PACKAGE__->set(
     # Arrayify options
     array_ref => '[$_]',
 );
+
+=option Hashify options
+
+=over
 
 =item I<hash_ref>         => B<'{$_}'>
 
@@ -337,6 +397,8 @@ How to filter items in a C<HASH>.
 
 How to interpret filtered items in a C<HASH>.
 
+=back
+
 =cut
 
 __PACKAGE__->set(
@@ -349,13 +411,17 @@ __PACKAGE__->set(
     #keywords         => undef,
 );
 
+=option Objectify options
+
+=over
+
 =item I<json_method> => B<'TO_JSON'>
 
-=item I<object>    => B<'$data'>
+=item I<object>      => B<'$data'>
 
 Objects are decomposed using this.
 
-=item I<overloads> => B<[ '""', '0+' ]>
+=item I<overloads>   => B<[ '""', '0+' ]>
 
 If objects have overloaded these, use them to decompose and object.
 
@@ -364,6 +430,8 @@ If objects have overloaded these, use them to decompose and object.
 To enable tag output, set this to C<'($class_str)$data'>.
 
 =item I<tag_method>  => B<'FREEZE'>
+
+=back
 
 =cut
 
@@ -378,9 +446,15 @@ __PACKAGE__->set(
     tag_method  => 'FREEZE',
 );
 
+=option Ioify options
+
+=over
+
 =item I<io> => B<'null'>
 
 How IO objects will be decomposed.
+
+=back
 
 =cut
 
@@ -389,9 +463,15 @@ __PACKAGE__->set(
     io => 'null',
 );
 
+=option Codeify options
+
+=over
+
 =item I<code> => B<'null'>
 
 How C<CODE> references will be decomposed.
+
+=back
 
 =cut
 
@@ -402,6 +482,10 @@ __PACKAGE__->set(
     #body     => undef,
 );
 
+=option Refify options
+
+=over
+
 =item I<reference> => B<'$_'>
 
 References will be ignored, and the actual value will be encoded.
@@ -409,6 +493,8 @@ References will be ignored, and the actual value will be encoded.
 =item I<dereference> => B<'$referent$place'>
 
 When referring to a location in the reference, decompose with this.
+
+=back
 
 =cut
 
@@ -418,6 +504,18 @@ __PACKAGE__->set(
     dereference => '$referent$place',
     #nested      => undef,
 );
+
+=option Formatify options
+
+=over
+
+=item I<format> => B<'null'>
+
+How a C<FORMAT> will be encoded.
+
+=back
+
+=cut
 
 __PACKAGE__->set(
     # Formatify options

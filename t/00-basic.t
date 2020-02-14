@@ -1,8 +1,10 @@
 #! /usr/bin/env perl
 
-use Test2::V0;
+# Proper testing requires a . at the end of the error message
+use Carp 1.25;
 
-plan(116);
+use Test2::V0;
+plan 116;
 
 ok require Jasonify, 'Can require Jasonify';
 #ok( Jasonify->VERSION, 'Jasonify version ' . Jasonify->VERSION );
@@ -11,7 +13,8 @@ can_ok(
     'Jasonify',
     qw(
         booleanify pairify undefify
-        encode get set
+        encode
+        get set
         new
     )
 );
@@ -20,22 +23,21 @@ can_ok(
 # Ensure things are set correctly.
 is( Jasonify->undefify, 'null', 'undefify is "null"' );
 
-is( Jasonify->booleanify(undef), 'null',  'booleanify(undef) is "null"' );
-is( Jasonify->booleanify(''),    'false', 'booleanify("") is "false"' );
-is( Jasonify->booleanify(0),     'false', 'booleanify(0) is "false"' );
-is( Jasonify->booleanify(1),     'true',  'booleanify(1) is "true"' );
+is( Jasonify->booleanify(  undef ), 'null',  'booleanify( undef) is "null"' );
+is( Jasonify->booleanify( \undef ), 'null',  'booleanify(\undef) is "null"' );
+is( Jasonify->booleanify(  '' ),    'false', 'booleanify( "") is "false"' );
+is( Jasonify->booleanify( \'' ),    'false', 'booleanify(\"") is "false"' );
+is( Jasonify->booleanify(  0 ),     'false', 'booleanify( 0) is "false"' );
+is( Jasonify->booleanify( \0 ),     'false', 'booleanify(\0) is "false"' );
+is( Jasonify->booleanify(  1 ),     'true',  'booleanify( 1) is "true"' );
+is( Jasonify->booleanify( \1 ),     'true',  'booleanify(\1) is "true"' );
 
-is( Jasonify->booleanify(\undef), 'null',  'booleanify(\undef) is "null"' );
-is( Jasonify->booleanify(\''),    'false', 'booleanify(\"") is "false"' );
-is( Jasonify->booleanify(\0),     'false', 'booleanify(\0) is "false"' );
-is( Jasonify->booleanify(\1),     'true',  'booleanify(\1) is "true"' );
 
 is(
     Jasonify->pairify( key => 'value' ),
     '"key" : "value"',
     'pairify(key => value) is "key" : "value"'
 );
-
 
 # Verify undef/null
 my $null = undef;
@@ -45,14 +47,6 @@ is( Jasonify->encode($null), 'null', 'undef encodes correctly' );
 # Verify booleans
 my $false = Jasonify::Boolean::false();
 my $true  = Jasonify::Boolean::true();
-
-is( Jasonify->encode($false), 'false', 'false encodes correctly' );
-is( Jasonify->encode($true),  'true',  'true  encodes correctly' );
-
-is( Jasonify->encode(\''), 'false', '\"" encodes correctly' );
-is( Jasonify->encode(\0),  'false', '\0  encodes correctly' );
-is( Jasonify->encode(\1),  'true',  '\1  encodes correctly' );
-is( Jasonify->encode(\11), 'true',  '\11 encodes correctly' );
 
 is(  $false, $Jasonify::Boolean::false, ' false is false' );
 is(  $true,  $Jasonify::Boolean::true,  ' true  is true'  );
@@ -116,6 +110,14 @@ cmp_ok( $false, 'eq', undef, 'false eq undef' );
 cmp_ok( $true,  'ne', undef, 'true  ne undef' );
 cmp_ok( $false, '==', undef, 'false == undef' );
 cmp_ok( $true,  '!=', undef, 'true  != undef' );
+
+is( Jasonify->encode($false), 'false', 'false encodes correctly' );
+is( Jasonify->encode($true),  'true',  'true  encodes correctly' );
+
+is( Jasonify->encode(\''), 'false', '\"" encodes correctly' );
+is( Jasonify->encode(\0),  'false', '\0  encodes correctly' );
+is( Jasonify->encode(\1),  'true',  '\1  encodes correctly' );
+is( Jasonify->encode(\11), 'true',  '\11 encodes correctly' );
 
 
 # Verify numbers

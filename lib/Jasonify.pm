@@ -1,9 +1,8 @@
 use v5.14;
-
 use warnings;
 
 package Jasonify;
-# ABSTRACT: Just another serialized object notation library.
+# ABSTRACT: Just Another Serialized Object Notation library.
 
 =head1 SYNOPSIS
 
@@ -20,8 +19,8 @@ package Jasonify;
 
 =head1 DESCRIPTION
 
-C<Jasonify> is very similar to L<JSON>, except that it's easier to use,
-has better defaults and options.
+C<Jasonify> is very similar to L<JSON>,
+except that it's easier to use, has better defaults and options.
 
 =cut
 
@@ -40,6 +39,9 @@ See L</OPTIONS> for a description of the options and their default values.
 
 =cut
 
+
+### Accessor ###
+
 =method exists( name, name, ... )
 
 Determine if values exists for one or more settings.
@@ -47,26 +49,6 @@ Determine if values exists for one or more settings.
 Can be called as a class method or an object method.
 
 =cut
-
-my %SETTINGS = ();
-
-# Override Datify::exists() in order to get the proper %SETTINGS
-sub exists {
-    my $self = shift;
-    return unless my $count = scalar(@_);
-
-    if ( Scalar::Util::blessed($self) ) {
-        return $count == 1
-            ? do {  exists $self->{ $_[0] } || exists $SETTINGS{ $_[0] } }
-            : map { exists $self->{ $_ }    || exists $SETTINGS{ $_ } } @_;
-    } else {
-        return
-            $count == 1 ? exists $SETTINGS{ $_[0] }
-            :       map { exists $SETTINGS{ $_ } } @_;
-    }
-}
-
-
 
 =method C<get( name, name, ... )>
 
@@ -77,26 +59,8 @@ Can be called as a class method or an object method.
 
 =cut
 
-# Override Datify::get() in order to get the proper %SETTINGS
-sub get {
-    my $self  = shift;
-    my $count = scalar(@_);
 
-    if ( defined( Scalar::Util::blessed($self) ) ) {
-        return
-              $count == 0 ? %{ { %SETTINGS, %$self } }
-            : $count == 1 ?
-                exists  $self->{ $_[0] }
-                    ?   $self->{ $_[0] }
-                    : $SETTINGS{ $_[0] }
-            : map { exists $self->{$_} ? $self->{$_} : $SETTINGS{$_} } @_;
-    } else {
-        return
-              $count == 0 ? %SETTINGS
-            : $count == 1 ? $SETTINGS{ $_[0] }
-            :               @SETTINGS{@_};
-    }
-}
+### Setter ###
 
 =method C<< set( name => value, name => value, ... ) >>
 
@@ -115,38 +79,6 @@ persist the change:
 
 =cut
 
-# Override Datify::set() in order to get the proper %SETTINGS
-sub set {
-    my $self = shift;
-    my %set  = @_;
-
-    my $return;
-    my $class;
-    if ( $class = Scalar::Util::blessed($self) ) {
-        # Make a shallow copy
-        $self   = bless { %$self }, $class;
-        $return = 0;
-    } else {
-        $class  = $self;
-        $self   = \%SETTINGS;
-        $return = 1;
-    }
-
-    # Not used in Jasonify.
-    #delete $self->{keyword_set} if ( $set{keywords} );
-    #delete $self->{"tr$_"} for grep { exists $set{"quote$_"} } ( 1, 2, 3 );
-
-    my $internal = $class->isa( scalar caller );
-    while ( my ( $k, $v ) = each %set ) {
-        Carp::carp( 'Unknown key ', $k )
-            unless $internal
-            || exists $self->{$k}
-            || exists $SETTINGS{$k};
-        $self->{$k} = $v;
-    }
-
-    return ( $self, $class )[$return];
-}
 
 =option Encode options
 
@@ -169,6 +101,7 @@ __PACKAGE__->set(
     beautify => undef,
 );
 
+
 =option Undefify options
 
 =over
@@ -185,6 +118,7 @@ __PACKAGE__->set(
     # Undefify options
     null  => 'null',
 );
+
 
 =option Booleanify options
 
@@ -205,6 +139,7 @@ __PACKAGE__->set(
     false => 'false',
     true  => 'true',
 );
+
 
 =option Stringify options
 
@@ -278,6 +213,7 @@ __PACKAGE__->set(
     #qquotes => undef,
 );
 
+
 =option Numify options
 
 =over
@@ -302,6 +238,7 @@ __PACKAGE__->set(
     #num_sep  => undef,
 );
 
+
 =option Lvalueify options
 
 =over
@@ -318,6 +255,7 @@ __PACKAGE__->set(
     # Lvalueify options
     lvalue    => '$lvalue',
 );
+
 
 =option Vstringify options
 
@@ -339,6 +277,7 @@ __PACKAGE__->set(
     vsep    => '\\u',
 );
 
+
 #=option Regexpify options
 #
 #=over
@@ -356,6 +295,7 @@ __PACKAGE__->set(
 #    #encode3 => undef,
 #);
 
+
 =option Arraryify options
 
 =over
@@ -372,6 +312,7 @@ __PACKAGE__->set(
     # Arrayify options
     array_ref => '[$_]',
 );
+
 
 =option Hashify options
 
@@ -411,25 +352,35 @@ __PACKAGE__->set(
     #keywords         => undef,
 );
 
+
 =option Objectify options
 
 =over
 
 =item I<json_method> => B<'TO_JSON'>
 
+The method to search for to see if an object has a specific representation
+for itself.
+
 =item I<object>      => B<'$data'>
 
 Objects are decomposed using this.
+If you wanted to decompose objects with the class name in addition to
+the internal representation of the data, then you may want to use
+C<'{$class_str : $data}'>.
 
 =item I<overloads>   => B<[ '""', '0+' ]>
 
-If objects have overloaded these, use them to decompose and object.
+If objects have overloaded these, use them to decompose the object.
 
 =item I<tag>         => B<undef>
 
 To enable tag output, set this to C<'($class_str)$data'>.
 
 =item I<tag_method>  => B<'FREEZE'>
+
+The method to search for to see if an object should be represented in the
+tag format.
 
 =back
 
@@ -445,6 +396,7 @@ __PACKAGE__->set(
     #tag         => '($class_str)$data',
     tag_method  => 'FREEZE',
 );
+
 
 =option Ioify options
 
@@ -462,6 +414,7 @@ __PACKAGE__->set(
     # Ioify options
     io => 'null',
 );
+
 
 =option Codeify options
 
@@ -481,6 +434,7 @@ __PACKAGE__->set(
     #codename => undef,
     #body     => undef,
 );
+
 
 =option Refify options
 
@@ -505,6 +459,7 @@ __PACKAGE__->set(
     #nested      => undef,
 );
 
+
 =option Formatify options
 
 =over
@@ -521,6 +476,7 @@ __PACKAGE__->set(
     # Formatify options
     format => 'null',
 );
+
 
 =method C<booleanify( value )>
 
@@ -539,6 +495,7 @@ sub booleanify {
     return $self->booleanify($$_) if 'SCALAR' eq ref;
     return $_ ? $Jasonify::Boolean::true : $Jasonify::Boolean::false;
 }
+
 
 =method C<keyify( value )>
 
@@ -587,6 +544,7 @@ sub _objectify_via_json {
 
     return $self->_objectify_via( $object => $self->get('json_method') );
 }
+
 
 =method C<objectify( value )>
 
@@ -657,6 +615,7 @@ sub objectify {
     );
 }
 
+
 =method C<regexpify( value, delimiters )>
 
 Simply calls out to L</stringify>.
@@ -673,6 +632,7 @@ sub regexpify {
 
 # Override Datify::varify so that it throws an error
 sub varify;
+
 
 =method C<vstringify( value )>
 
@@ -694,6 +654,7 @@ sub vstringify {
         ? $self->SUPER::vstringify($_)
         : $self->stringify($_);
 }
+
 
 =method C<scalarify( value )>
 
@@ -791,14 +752,18 @@ sub encode {
 If passed a C<value>, returns the boolean for that value.
 If passed no C<value>, retunrs the name of the class representing booleans.
 
+Also aliased as C<bool( value )>.
+
 See L</Jasonify::Boolean>.
 
 =cut
 
 sub boolean {
-    my $self = &Datify::self;
-    return @_ ? Jasonify::Boolean::bool(shift) : 'Jasonify::Boolean';
+    &Datify::class;
+    return @_ ? Jasonify::Boolean::bool( $_[-1] ) : 'Jasonify::Boolean';
 }
+*bool = \&boolean;
+
 
 =method C<literal( value )>
 
@@ -811,9 +776,10 @@ See L</Jasonify::Literal>.
 =cut
 
 sub literal {
-    my $self = &Datify::self;
-    return @_ ? Jasonify::Literal->new(shift) : 'Jasonify::Literal';
+    &Datify::class;
+    return @_ ? Jasonify::Literal->new( $_[-1] ) : 'Jasonify::Literal';
 }
+
 
 =method C<number( value, ... )>
 
@@ -828,7 +794,7 @@ See L</Jasonify::Number>.
 =cut
 
 sub number {
-    my $self  = &Datify::self;
+    &Datify::class;
     my $count = scalar @_;
     return
           $count >= 2 ? Jasonify::Number->formatted(@_)
@@ -837,13 +803,49 @@ sub number {
         ;
 }
 
+
+=method C<string( value )>
+
+If passed a C<value>, returns a representation of that value that,
+when encoded, will be exactly that C<value> as a string.
+
+See L</Jasonify::Literal>.
+
+=cut
+
+sub string {
+    &Datify::class;
+    return @_ ? Jasonify::Literal->string( $_[-1] ) : 'Jasonify::Literal';
+}
+
+### Private Methods & Settings ###
+### Do not use these methods & settings outside of this package,
+### they are subject to change or disappear at any time.
+sub _settings() { \state %SETTINGS }
+
 __PACKAGE__->set(
     _cache_hit  => 1,   # Sets the caching to use the final representation
                         # or die if that doesn't exist
 );
 
-package Jasonify::Literal;
-# ABSTRACT: Just another serialized object notation library, literal.
+=head1 TODO
+
+=over
+
+=item *
+
+Implement C<decode()>.
+
+=back
+
+=head1 SEE ALSO
+
+L<JSON>, L<Datify>
+
+=cut
+
+package
+    Jasonify::Literal;
 
 use Scalar::Util ();    #qw( blessed looks_like_number );
 
@@ -867,12 +869,14 @@ sub false() { $false }
 sub true()  { $true  }
 
 sub new {
-    my $class = Scalar::Util::blessed( $_[0] ) // $_[0];
-    die "undef is not a literal value" unless defined( $_[1] );
-    return bless \do { my $literal = $_[1] }, $class;
+    my $class   = &Datify::class;
+    my $literal = shift;
+    return $null  unless defined($literal);
+    return $false unless length( $literal);
+    return bless \$literal, $class;
 }
 sub string {
-    $_[1] = Jasonify->stringify($_[1]);
+    @_ = ( shift, Jasonify->stringify(@_) );
     goto &new;
 }
 #sub comment {
@@ -888,12 +892,11 @@ sub bool {
         && $literal ne $$false
         && $literal ne '""'
         && $literal ne '"0"'
-        && Scalar::Util::looks_like_number($literal)
-        && $literal != 0;
+        && !( Scalar::Util::looks_like_number($literal) && $literal == 0 );
 }
 
-package Jasonify::Number;
-# ABSTRACT: Just another serialized object notation library, number.
+package
+    Jasonify::Number;
 
 use Scalar::Util ();    #qw( looks_like_number );
 
@@ -936,31 +939,25 @@ sub negate {
         ;
 }
 sub number {
-    my $class = shift;
+    my $class = &Datify::class;
     my $num   = shift;
-    if ( Scalar::Util::looks_like_number($num) ) {
-        if ( not defined( $num <=> 0 ) ) {
-            return $nan;
-        } elsif ( $num == "Infinity" ) {
-            return $inf;
-        } elsif ( $num == "-Infinity" ) {
-            return $ninf;
-        } elsif ( $num =~ /^$number_regex$/ ) {
-            return $class->new($num);
-        } else {
-            die "Malformed number $num";
-        }
-    } else {
-        die "Not a number $num";
-    }
+    Carp::croak( "Not a number ", $num )
+        unless ( Scalar::Util::looks_like_number($num) );
+
+    return
+          not( defined( $num <=> 0 ) ) ? $nan
+        : $num ==  'Infinity'          ? $inf
+        : $num == '-Infinity'          ? $ninf
+        : $num =~ /\A$number_regex\z/  ? $class->new($num)
+        :   Carp::croak( "Malformed number ", $num );
 }
 
 sub formatted { return shift()->number( sprintf( shift(), @_ ) ) }
 sub integer   { return shift()->formatted( '%d', shift() ) }
 sub float     { return shift()->formatted( '%f', shift() ) }
 
-package Jasonify::Boolean;
-# ABSTRACT: Just another serialized object notation library, boolean.
+package
+    Jasonify::Boolean;
 
 use Scalar::Util ();    #qw( blessed );
 
@@ -1008,16 +1005,3 @@ sub is_bool($) { Scalar::Util::blessed( $_[0] ) && $_[0]->isa(__PACKAGE__) }
 
 __END__
 
-=head1 TODO
-
-=over
-
-=item *
-
-Implement C<decode()>.
-
-=back
-
-=head1 SEE ALSO
-
-L<JSON>, L<Datify>

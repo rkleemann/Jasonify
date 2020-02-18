@@ -24,9 +24,10 @@ except that it's easier to use, has better defaults and options.
 
 =cut
 
-use Carp            ();           #qw( carp );
-use Scalar::Util    ();           #qw( blessed looks_like_number reftype );
-use String::Tools qw( subst );    #qw( );
+use Carp             ();           #qw( carp );
+use Datify v0.20.045 ();
+use Scalar::Util     ();           #qw( blessed looks_like_number reftype );
+use String::Tools  qw( subst );    #qw( );
 
 use parent 'Datify';
 

@@ -213,16 +213,17 @@ $hash{first}  = { map { $_ => $_ } $false, $true, '', 0, 1 };
 $value{first} = '{"0" : 0, "1" : 1, "" : "", "false" : false, "true" : true}';
 is( Jasonify->encode( $hash{first} ), $value{first}, 'hash of scalars' );
 
-my $order = (
-    qq!"$numfstr" : $numfstr, "$numstr" : $numstr, !,
-    qq!"$numstr" : $numstr, "$numfstr" : $numfstr, !,
-    qq!"$numstr" : $numstr, "$numfstr" : $numfstr, !,
-)[ 1 + ( $num <=> $numf ) ];
-$hash{second} = { map { $_ => $_ } $int, $num, $numf, $inf, $nan };
+$hash{second} = { map { $_ => $_ } $int, $num, $numf };
+$value{second} = join( '',
+    map { sprintf( '"%s" : %s, ', $_, $hash{second}{$_} ) }
+        sort { $a <=> $b }
+            keys %{ $hash{second} }
+);
+$hash{second}{$inf} = $inf;
+$hash{second}{$nan} = $nan;
 $value{second}
     = '{'
-    . $order
-    . '"9876543210" : 9876543210, '
+    . $value{second}
     . '"Infinity" : "Infinity", '
     . '"NaN" : "NaN"'
     . '}';

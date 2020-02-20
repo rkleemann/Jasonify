@@ -848,13 +848,11 @@ L<JSON>, L<Datify>
 package
     Jasonify::Literal;
 
-use Scalar::Util ();    #qw( blessed looks_like_number );
+use Scalar::Util ();    #qw( looks_like_number );
 
 use overload
     'bool' => 'bool',
     '""'   => 'as_string',
-
-    #'cmp' => \&compare,
     ;
 
 our $null  = bless \do { my $null  = Jasonify->get('null')  }, __PACKAGE__;

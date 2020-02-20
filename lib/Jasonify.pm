@@ -905,7 +905,7 @@ use overload
     '0+'  => 'as_num',
     'neg' => 'negate',
 
-    #'<=>' => \&compare,
+    '<=>' => 'compare',
     ;
 use parent -norequire => 'Jasonify::Literal';
 
@@ -929,6 +929,7 @@ my $number_regex = do {
     qr/-?$integer$decimal?(?:[Ee][+-]?$integer)?/;
 };
 
+sub compare { ( $_[2] ? -1 : +1 ) * ( $_[0]->as_num <=> $_[1] ) }
 sub as_num { eval ${ $_[0] } }
 sub negate {
     my $num = ${$_[0]};

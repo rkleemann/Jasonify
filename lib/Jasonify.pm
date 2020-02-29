@@ -24,10 +24,11 @@ except that it's easier to use, has better defaults and options.
 
 =cut
 
-use Carp             ();           #qw( carp );
-use Datify v0.20.052 ();
-use Scalar::Util     ();           #qw( blessed looks_like_number reftype );
-use String::Tools  qw( subst );    #qw( );
+use Carp                ();    #qw( carp );
+use Datify    v0.20.060 ();
+use LooksLike v0.20.060 ();    #qw( number representation );
+use Scalar::Util        ();    #qw( blessed reftype );
+use String::Tools       ();    #qw( subst );
 
 use parent 'Datify';
 
@@ -510,17 +511,14 @@ sub keyify {
     my $self = &Datify::self;
     local $_ = shift if @_;
 
-    return Scalar::Util::looks_like_number($_)
-        ? (
-            defined( $_ <=> 0 )
-                ? (
-                      $_ ==  "Infinity" ? $Jasonify::Number::inf
-                    : $_ == "-Infinity" ? $Jasonify::Number::ninf
-                    :                     $self->stringify($_)
-                )
-                : $Jasonify::Number::nan
-        )
-        : $self->stringify($_);
+    return LooksLike::representation(
+        $_,
+
+        $_          => $self->stringify($_),
+        "infinity"  => $Jasonify::Number::inf,
+        "-infinity" => $Jasonify::Number::ninf,
+        "nan"       => $Jasonify::Number::nan,
+    );
 }
 
 sub _objectify_via {
@@ -608,7 +606,7 @@ sub objectify {
             :                     $self->undefify;
     }
 
-    return subst(
+    return String::Tools::subst(
         $object_str,
         class_str => $self->stringify($class),
         class     => $class,
@@ -692,7 +690,7 @@ sub _scalarify {
               $ref2 eq 'GLOB'    ? $self->globify($_)
             : $ref2 eq 'LVALUE'  ? $self->lvalueify($_)
             : $ref2 eq 'VSTRING' ? $self->vstringify($_)
-            : $ref2 eq 'SCALAR' && Scalar::Util::looks_like_number($_)
+            : $ref2 eq 'SCALAR' && LooksLike::number($_)
                                  ? $self->numify($_)
             :                      $self->stringify($_)
             ;
@@ -848,7 +846,7 @@ L<JSON>, L<Datify>
 package
     Jasonify::Literal;
 
-use Scalar::Util ();    #qw( looks_like_number );
+use LooksLike ();    #qw( zero );
 
 use overload
     'bool' => 'bool',
@@ -891,13 +889,13 @@ sub bool {
         && $literal ne $$false
         && $literal ne '""'
         && $literal ne '"0"'
-        && !( Scalar::Util::looks_like_number($literal) && $literal == 0 );
+        && !LooksLike::zero($literal);
 }
 
 package
     Jasonify::Number;
 
-use Scalar::Util ();    #qw( looks_like_number );
+use LooksLike ();    #qw( number numeric representation );
 
 use overload
     '0+'  => 'as_num',
@@ -944,14 +942,14 @@ sub number {
     my $class = &Datify::class;
     my $num   = shift;
     Carp::croak( "Not a number ", $num )
-        unless ( Scalar::Util::looks_like_number($num) );
+        unless ( LooksLike::number($num) );
 
     return
-          not( defined( $num <=> 0 ) ) ? $nan
-        : $num ==  'Infinity'          ? $inf
-        : $num == '-Infinity'          ? $ninf
-        : $num =~ /\A$number_regex\z/  ? $class->new($num)
-        :   Carp::croak( "Malformed number ", $num );
+          LooksLike::numeric($num)
+        ? $num =~ /\A$number_regex\z/
+            ? $class->new($num)
+            : Carp::croak( "Malformed number ", $num )
+        : LooksLike::representation($num);
 }
 
 sub formatted { return shift()->number( sprintf( shift(), @_ ) ) }

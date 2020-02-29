@@ -2,6 +2,10 @@ Revision history for Jasonify.
 
 {{$NEXT}}
 
+ - Added LooksLike where it makes sense.
+
+v0.20.052 2020-02-21
+
  - Another fix for long double support.
 
 v0.20.050 2020-02-19

@@ -371,6 +371,7 @@ my $jasonify = do {
          "json_method"      : "TO_JSON",
          "keyfilter"        : null,
          "keyfilterdefault" : 1,
+         "keymap"           : null,
          "keysort"          : null,
          "list_sep"         : ", ",
          "longstr"          : -1,

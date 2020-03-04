@@ -25,7 +25,7 @@ except that it's easier to use, has better defaults and options.
 =cut
 
 use Carp                ();    #qw( carp );
-use Datify    v0.20.060 ();
+use Datify    v0.20.064 ();
 use LooksLike v0.20.060 ();    #qw( number representation );
 use Scalar::Util        ();    #qw( blessed reftype );
 use String::Tools       ();    #qw( subst );
@@ -348,6 +348,7 @@ __PACKAGE__->set(
     # Hashify options
     hash_ref         => '{$_}',
     pair             => '$key : $value',
+    keymap           => \&Jasonify::keymap,
     keysort          => \&Datify::keysort,
     keyfilter        => undef,
     keyfilterdefault => 1,
@@ -511,14 +512,49 @@ sub keyify {
     my $self = &Datify::self;
     local $_ = shift if @_;
 
-    return LooksLike::representation(
+    my $blessed = Scalar::Util::blessed($_);
+    return defined($blessed) && $blessed->isa("Jasonify::Literal")
+        ? $_
+        : $self->stringify($_);
+}
+
+# Override Datify::hashkeyvals to handle Jasonify::_key elements
+sub hashkeyvals {
+    my $self = shift;
+    my $hash = shift;
+
+    return map {
+        my $blessed = Scalar::Util::blessed($_);
+        if ( defined($blessed) ) {
+            Carp::croak("Cannot handle $blessed")
+                unless $blessed->isa("Jasonify::_key");
+            ( $_->string() => $hash->{ $_->key() } );
+        } else {
+            ( $_ => $hash->{$_} );
+        }
+    } $self->hashkeys($hash);
+}
+
+# Implement a keymap for unusual numbers
+sub keymap {
+    my $self = &Datify::self;
+    local $_ = shift if @_;
+
+    return $_ unless ( LooksLike::infinity($_) || LooksLike::nan($_) );
+
+    my $rep = LooksLike::representation(
         $_,
 
-        $_          => $self->stringify($_),
-        "infinity"  => $Jasonify::Number::inf,
-        "-infinity" => $Jasonify::Number::ninf,
-        "nan"       => $Jasonify::Number::nan,
+        "infinity"  => [ $Jasonify::Number::inf,  Jasonify->get("infinite")  ],
+        "-infinity" => [ $Jasonify::Number::ninf, Jasonify->get("-infinite") ],
+        "nan"       => [ $Jasonify::Number::nan,  Jasonify->get("nonnumber") ],
     );
+    # key     string         sortby
+    # ======= ============== ===========
+    # "inf",  '"Infinity"',  "Infinity"
+    # "-inf", '"-Infinity"', "-Infinity"
+    # "nan",  '"NaN"',       "NaN"
+    return Jasonify::_key->new( $_, @$rep );
 }
 
 sub _objectify_via {
@@ -843,6 +879,32 @@ L<JSON>, L<Datify>
 
 =cut
 
+
+package
+    Jasonify::_key;
+
+use parent -norequire => 'Jasonify::Literal';
+
+use overload
+    '""'  => 'string',
+    'cmp' => 'compares',
+    '<=>' => 'comparen',
+    ;
+
+sub new {
+    my $class = &Datify::class;
+    my @self  = @_;               # key, string, sortby
+    return bless( \@self, $class );
+}
+
+sub key    { $_[0][ 0] }
+sub string { $_[0][+1] }
+sub sortby { $_[0][-1] }
+
+sub comparen { ( $_[2] ? -1 : +1 ) * ( $_[0]->sortby <=> $_[1] ) }
+sub compares { ( $_[2] ? -1 : +1 ) * ( $_[0]->sortby cmp $_[1] ) }
+
+
 package
     Jasonify::Literal;
 
@@ -891,6 +953,7 @@ sub bool {
         && $literal ne '"0"'
         && !LooksLike::zero($literal);
 }
+
 
 package
     Jasonify::Number;
@@ -955,6 +1018,7 @@ sub number {
 sub formatted { return shift()->number( sprintf( shift(), @_ ) ) }
 sub integer   { return shift()->formatted( '%d', shift() ) }
 sub float     { return shift()->formatted( '%f', shift() ) }
+
 
 package
     Jasonify::Boolean;

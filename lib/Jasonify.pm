@@ -220,11 +220,11 @@ __PACKAGE__->set(
 
 =over
 
-=item I<infinite>  => B<"Infinifty">,
+=item I<infinite>  => B<Infinifty>,
 
-=item I<-infinite> => B<"-Infinifty">,
+=item I<-infinite> => B<-Infinifty>,
 
-=item I<nonnumber> => B<"NaN">,
+=item I<nonnumber> => B<NaN>,
 
 How to encode the values for infinity, negative infinity, and not-a-number.
 
@@ -234,9 +234,9 @@ How to encode the values for infinity, negative infinity, and not-a-number.
 
 __PACKAGE__->set(
     # Numify options
-    infinite  => '"Infinity"',
-    -infinite => '"-Infinity"',
-    nonnumber => '"NaN"',
+    infinite  => 'Infinity',
+    -infinite => '-Infinity',
+    nonnumber => 'NaN',
     #num_sep  => undef,
 );
 
@@ -691,6 +691,24 @@ sub vstringify {
 }
 
 
+sub numify {
+    my $self = &Datify::self;
+    local $_ = shift if @_;
+
+    return $self->undefify unless defined;
+
+    return
+          $self->is_numeric($_) ? $_
+        : LooksLike::number($_) ? LooksLike::representation(
+            $_,
+
+            "infinity"  => $Jasonify::Number::inf,
+            "-infinity" => $Jasonify::Number::ninf,
+            "nan"       => $Jasonify::Number::nan,
+        )
+        :                         $Jasonify::Number::nan;
+}
+
 =method C<scalarify( value )>
 
 This is the method called by L</encode( value, ... )>
@@ -969,9 +987,10 @@ use overload
     ;
 use parent -norequire => 'Jasonify::Literal';
 
-our $nan  = bless \do { my $nan  = Jasonify->get('nonnumber') }, __PACKAGE__;
-our $inf  = bless \do { my $inf  = Jasonify->get( 'infinite') }, __PACKAGE__;
-our $ninf = bless \do { my $ninf = Jasonify->get('-infinite') }, __PACKAGE__;
+our ( $nan, $inf, $ninf )
+    = map {
+        bless \do { Jasonify->stringify($_) }, __PACKAGE__
+    } Jasonify->get(qw( nonnumber infinite -infinite ));
 
 sub Jasonify::jasonify_numberify { $_[1]->as_string }
 # OR

@@ -4,6 +4,8 @@ Revision history for Jasonify.
 
  - Use keymap functionality in Datify to support proper sorting of -Infinity,
    Infinity, and NaN.
+ - Change representations of -Infinity, Infinity, and NaN to exclude quotes
+   (but the quotes are still there where needed).
 
 v0.20.060 2020-02-29
 
